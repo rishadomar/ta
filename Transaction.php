@@ -2,12 +2,18 @@
 
 class Transaction
 {
+	const StatusNormal = 0;
+	const StatusIgnore = 1;
+	const StatusSplit = 2;
+	
 	private $id;
 	private $date;
 	private $description;
 	private $amount;
 	private $categoryId;
 	private $category;
+	private $status;
+	private $comment;
 
 	/**
 	 * Constructor
@@ -16,14 +22,18 @@ class Transaction
 								$date,
 								$description,
 								$amount,
-								$categoryId)
+								$categoryId,
+								$status,
+								$comment)
 	{
-		$this->id = $id;
-		$this->date = $date;
-		$this->description = $description;
-		$this->amount = $amount;
-		$this->categoryId = $categoryId;
-		$this->category = false;
+		$this->id 			= $id;
+		$this->date 		= $date;
+		$this->description 	= $description;
+		$this->amount 		= $amount;
+		$this->categoryId 	= $categoryId;
+		$this->category 	= false;
+		$this->status 		= $status;
+		$this->comment 		= $comment;
 	}
 
 	/**
@@ -33,7 +43,6 @@ class Transaction
 											$description,
 											$amount)
 	{
-		global $db;
 		$q = 	"SELECT * FROM trans WHERE trdate = '" .
 				$date .
 				"' AND description like '" .
@@ -41,27 +50,32 @@ class Transaction
 				"%' AND amount='" .
 				$amount .
 				"'";
-		$result = $db->query($q);
+		echo $q . "\n";
+		/**
+		global $db;
+		$query = $db->prepare($q);
+		$result = $query->execute();
 		if (!$result) {
 			throw new Exception('Failed fetching the data from database. Query: ' .
 								$q);
 		}
-		$rows = $result->fetchAll();
-		$c = count($rows);
-		if ($c == 0) {
+		**/
+		$result = runQuery($q);
+		$rows = $result->fetchAll(PDO::FETCH_ASSOC);
+		if (!$rows) {
 			return null;
 		}
-		if ($c > 1) {
-			throw new Exception('Expected only 1 record with supplied details. Instead got: ' .
-								$c .
-								' entries. ');
+		if (count($rows) > 1) {
+			throw new Exception('More than 1 record matched the criteria.');
 		}
 		$row = $rows[0];
-		return new Transaction(	$row[0],
-								$row[1],
-								$row[2],
-								$row[3],
-								$row[4]);
+		return new Transaction(	$row['ID'],
+								$row['trdate'],
+								$row['description'],
+								$row['amount'],
+								$row['category'],
+								$row['status'],
+								$row['comment']);
 	}
 	
 	/**
@@ -80,25 +94,39 @@ class Transaction
 		
 		$category = Category::findWithTransactionDescription($description);
 		
-		global $db;
 		$q = 	"INSERT INTO trans VALUES (" .
 				"null," .
 				"'" . $date . "'," .
 				"'" . $description . "'," .
 				"'" . $amount . "'," .
-				$category->getId() .
+				$category->getId() . "," .
+				self::StatusNormal . "," . 
+				"null" .
 				")";
+		$result = runQuery($q);
+		/**
+		global $db;
 		$result = $db->query($q);
 		if (!$result) {
 			throw new Exception('Database error encountered while inserting. Query: ' .
 								$q);
 		}
+		**/
+		return self::makeWithDetails(	$date,
+										$description,
+										$amount);
+	
+
+
+
 		
 		return new self($id,		// ?
 						$date,
 						$description,
 						$amount,
-						$category->getId());
+						$category->getId(),
+						self::StatusNormal,
+						null);
 	}
 	
 	public function getDate()
@@ -124,25 +152,86 @@ class Transaction
 		return $this->category;
 	}
 	
+	public function getStatus()
+	{
+		return $this->status;
+	}
+	
+	public function getComment()
+	{
+		return $this->comment;
+	}
+	
 	public function toString()
 	{
-		return $this->date . ' ' . $this->description . ' ' . $this->amount;
+		return $this->date . ' ' . $this->description . ' ' . $this->amount. ' ' . $this->status . ' ' . $this->comment;
 	}
 		
 	public function setCategory(Category $newCategory)
 	{
-		global $db;
 		$q = 	"UPDATE trans SET category=" .
 				$newCategory->getId() .
 				" WHERE id=" .
 				$this->id;
-		$result = $db->query($q);
+		$result = runQuery($q);
+		/**
+		global $db;
+		$result = $db->prepare($q);
+		$result = $db->execute();
 		if (!$result) {
 			throw new Exception('Unable to update the category. Query: ' .
 								$q);
 		}
+		**/
 		$this->categoryId = $newCategory->getId();
 		$this->category = $newCategory;
+	}
+
+	public function setComment($comment)
+	{
+		$q = 	"UPDATE trans SET comment='" .
+				$comment .
+				"' WHERE id=" .
+				$this->id;
+		$result = runQuery($q);
+		/**
+		global $db;
+		$query = $db->prepare($q);
+		$result = $query->execute();
+		if (!$result) {
+			$errorInfo = $query->errorInfo();
+			throw new Exception('Unable to set the comment. Query: ' .
+								$q .
+								' Reason: ' .
+								$errorInfo[2]);
+		}
+		**/
+		$this->comment = $comment;
+	}
+
+	public function setStatus($status)
+	{
+		if ($status != self::StatusNormal
+			||
+			$status != self::StatusIgnore
+			||
+			$status != self::StatusSplit) {
+			throw new Exception('Invalid status to set: ' . $status);
+		}
+		$q = 	"UPDATE trans SET status=" .
+				$status .
+				" WHERE id=" .
+				$this->id;
+		$result = runQuery($q);
+		/**`
+		global $db;
+		$result = $db->query($q);
+		if (!$result) {
+			throw new Exception('Unable to set the status. Query: ' .
+								$q);
+		}
+		**/
+		$this->status = $status;
 	}
 
 	static public function readAll($fileName,
@@ -166,10 +255,10 @@ class Transaction
 			}
 			$parts = explode(	',',
 								$line);
-			$transactionDetail['date'] 		= trim(str_replace("/", "-", $parts[0]));
+			$transactionDetail['date'] 			= trim(str_replace("/", "-", $parts[0]));
 			$transactionDetail['description']	= trim(str_replace("'", "", $parts[3]));
 			$transactionDetail['amount'] 		= trim($parts[1]);
-			$transactionDetails[] = $transactionDetail;
+			$transactionDetails[] 				= $transactionDetail;
 			unset($transactionDetail);
 		}
 	}
@@ -183,9 +272,9 @@ class Transaction
 		Transaction::readAll(	$fileName,
 								$transactionDetails);
 		foreach ($transactionDetails as &$transactionDetail) {
-			$transaction = Transaction::makeWithDetails($date,
-														$description,
-														$amount);
+			$transaction = Transaction::makeWithDetails($transactionDetail['date'],
+														$transactionDetail['description'],
+														$transactionDetail['amount']);
 			if ($transaction != null) {
 				continue;
 			}
@@ -204,20 +293,25 @@ class Transaction
 				"' AND trdate <= '" .
 				$stopDate .
 				"' ORDER BY trdate ASC";
+		$result = runQuery($q);
+		/**
 		global $db;
 		$result = $db->query($q);
 		if (!$result) {
 			throw new Exception('Failed fetching the data from database. Query: ' .
 								$q);
 		}
+		**/
 		echo $q . "\n";
-		$rows = $result->fetchAll();
+		$rows = $result->fetchAll(PDO::FETCH_ASSOC);
 		foreach ($rows as &$row) {
-			$transactions[] = new Transaction(	$row[0],
-												$row[1],
-												$row[2],
-												$row[3],
-												$row[4]);
+			$transactions[] = new Transaction(	$row['ID'],
+												$row['trdate'],
+												$row['description'],
+												$row['amount'],
+												$row['category'],
+												$row['status'],
+												$row['comment']);
 		}
 	}
 	
@@ -236,13 +330,16 @@ class Transaction
 											$row[1],
 											$row[2],
 											$row[3],
-											$row[4]);
+											$row[4],
+											$row[5],
+											$row[6]);
+			echo "Considering: " . $transaction->description . "\n";
 			$category = Category::findWithTransactionDescription($transaction->description);
 			if ($category->getId() == 0) {
 				unset($transaction);
 				continue;
 			}
-			echo 	"Resetting category to: " .
+			echo 	"Setting category to: " .
 					$category->getName() .
 					" for transaction " .
 					$transaction->toString() .

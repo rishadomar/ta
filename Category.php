@@ -3,8 +3,7 @@
 class Category
 {
 	static $categories = false;
-	//const CategoryFileName = '/home/rishadomar/data/ta/categories.list';	
-	const CategoryFileName = '/home/rishadomar/src/ta/categories.list';
+	const CategoryFileName = 'categories.list';
 	private $id;
 	private $name;
 	private $transactionDescriptions;

@@ -5,7 +5,8 @@
 	require_once('./Transaction.php');
 		
 	global $db;
-	$db = new SQLiteDatabase('ta.db');
+	//$db = new SQLite3Database('ta.db');
+	$db = new PDO('sqlite:ta.db');
 
 	$command = $argv[1];
 
@@ -66,6 +67,37 @@
 		return;
 	}
 	
+	if ($command == 'ignore') {
+		$date 			= $argv[2];
+		$description 	= $argv[3];
+		$amount 		= $argv[4];
+		$transaction = Transaction::makeWithDetails($date,
+													$description,
+													$amount);
+		if (!$transaction) {
+			throw new Exception('Transaction not found.');
+		}
+		$transaction->setStatus(Transaction::StatusIgnore);
+		echo "Done.\n";
+		return;
+	}
+	
+	if ($command == 'comment') {
+		$date 			= $argv[2];
+		$description 	= $argv[3];
+		$amount 		= $argv[4];
+		$newComment		= $argv[5];
+		$transaction = Transaction::makeWithDetails($date,
+													$description,
+													$amount);
+		if (!$transaction) {
+			throw new Exception('Transaction not found.');
+		}
+		$transaction->setComment($newComment);
+		echo "Done.\n";
+		return;
+	}
+	
 	echo "Invalid usage.\n";
 	showUsage();
 
@@ -86,5 +118,23 @@
 		echo	"	categorise <date> <description> <amount> <newCategory id or name>\n";
 	}
 
+	function runQuery($q)
+	{
+		global $db;
+		$query = $db->prepare($q);
+		if (!$query) {
+			throw new Exception('Syntax error in query: ' . $q);
+		}
+		$result = $query->execute();
+		if (!$result) {
+			$errorInfo = $query->errorInfo();
+			throw new Exception('Unable to execute the query. Query: ' .
+								$q .
+								' Reason: ' .
+								$errorInfo[2]);
+		}
+		
+		return $query;
+	}
 
 ?>

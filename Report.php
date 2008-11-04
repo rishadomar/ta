@@ -81,6 +81,7 @@ class Report
 		foreach ($categories as $category) {
 			$report[$category->getName()] = array();
 		}
+		$report['Ignored'] = array();
 			
 		$transactions = array();
 		Transaction::getTransactions(	$transactions,
@@ -88,7 +89,11 @@ class Report
 										$this->stopDate);
 			
 		foreach ($transactions as &$transaction) {
-			$report[$transaction->getCategory()->getName()][] = $transaction;
+			if ($transaction->getStatus() == Transaction::StatusIgnore) {
+				$report['Ignored'][] = $transaction;
+			} else {
+				$report[$transaction->getCategory()->getName()][] = $transaction;
+			}
 		}
 			
 		$total = 0;
@@ -106,6 +111,9 @@ class Report
 				$categoryTotal += $transaction->getAmount();
 			}
 			printf("\tTotal: " . $categoryTotal .  "\n\n\n");
+			if ($categoryName == 'Ignored') {
+				continue;
+			}
 			$total += $categoryTotal;
 		}
 		printf("Total: " . $total .  "\n");

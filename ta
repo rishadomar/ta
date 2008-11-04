@@ -1,0 +1,90 @@
+#!/usr/bin/php -q
+<?php
+	require_once('./Category.php');
+	require_once('./Report.php');
+	require_once('./Transaction.php');
+		
+	global $db;
+	$db = new SQLiteDatabase('ta.db');
+
+	$command = $argv[1];
+
+	if ($command == '') {
+		showUsage();
+		return;
+	}
+
+	if ($command == 'import') {
+		$fileName = $argv[2];
+		if (!$fileName) {
+			echo "Invalid usage. Missing file name to import.\n";
+			return;
+		}
+		Transaction::import($fileName);
+		echo "Done.\n";
+		return;
+	}
+	
+	if ($command == 'report') {
+		$param = $argv[2];
+		if (is_numeric($param[0])) {
+			$startDate = $argv[2];
+			$stopDate = $argv[3];
+			$report = new Report(	$startDate,
+									$stopDate);
+		} else {
+			$report = Report::makeWithMonth($param);
+		}
+
+		$report->run();
+		return;
+	}
+	
+	if ($command == 'recategorise') {
+		Transaction::recategorise();
+		echo "Done.\n";
+		return;
+	}
+	
+	if ($command == 'categorise') {
+		$date = $argv[2];
+		$description = $argv[3];
+		$amount = $argv[4];
+		if (is_numeric($argv[5])) {
+			$newCategory = Category::makeWithId($argv[5]);
+		} else {
+			$newCategory = Category::makeWithName($argv[5]);
+		}
+		$transaction = Transaction::makeWithDetails($date,
+													$description,
+													$amount);
+		if (!$transaction) {
+			throw new Exception('Transaction not found.');
+		}
+		$transaction->setCategory($newCategory);
+		echo "Done.\n";
+		return;
+	}
+	
+	echo "Invalid usage.\n";
+	showUsage();
+
+	/**
+	 * Show usage
+	 */
+	function showUsage()
+	{
+		echo 	"Usage: ta command parameters\n";
+		echo	" where command may be:\n";
+		echo	"	import <filename>\n";
+		echo	"   Example: import downloads/2008-09-01.csv\n";
+		echo	"	report <startDate> <endDate> or <month>\n";
+		echo	"   Example: report 2008-09-24 2008-10-12\n";
+		echo	"   Example: report sep\n";
+		echo	"   Example: report sep2007\n";
+		echo	"	recategorise\n";
+		echo	"	categorise <date> <description> <amount> <newCategory id or name>\n";
+	}
+
+
+?>

@@ -47,10 +47,8 @@ class Transaction
 				$date .
 				"' AND description like '" .
 				$description .
-				"%' AND amount='" .
-				$amount .
-				"'";
-		echo $q . "\n";
+				"%' AND amount=" .
+				$amount;
 		/**
 		global $db;
 		$query = $db->prepare($q);
@@ -98,7 +96,7 @@ class Transaction
 				"null," .
 				"'" . $date . "'," .
 				"'" . $description . "'," .
-				"'" . $amount . "'," .
+				$amount . "," .
 				$category->getId() . "," .
 				self::StatusNormal . "," . 
 				"null" .
@@ -271,17 +269,23 @@ class Transaction
 		$transactionDetails = array();
 		Transaction::readAll(	$fileName,
 								$transactionDetails);
+		$ignored = 0;
+		$added = 0;
 		foreach ($transactionDetails as &$transactionDetail) {
 			$transaction = Transaction::makeWithDetails($transactionDetail['date'],
 														$transactionDetail['description'],
 														$transactionDetail['amount']);
 			if ($transaction != null) {
+				++$ignored;
 				continue;
 			}
 			Transaction::makeNew(	$transactionDetail['date'],
 									$transactionDetail['description'],
 									$transactionDetail['amount']);
+			++$added;
 		}
+		return array(	'ignored' => $ignored,
+						'added' => $added);
 	}
 	
 	static public function getTransactions(	&$transactions,

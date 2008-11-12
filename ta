@@ -21,8 +21,8 @@
 			echo "Invalid usage. Missing file name to import.\n";
 			return;
 		}
-		Transaction::import($fileName);
-		echo "Done.\n";
+		$result = Transaction::import($fileName);
+		print_r($result);
 		return;
 	}
 	

@@ -5,7 +5,7 @@ class Transaction
 	const StatusNormal = 0;
 	const StatusIgnore = 1;
 	const StatusSplit = 2;
-	
+
 	private $id;
 	private $date;
 	private $description;
@@ -75,7 +75,7 @@ class Transaction
 								$row['status'],
 								$row['comment']);
 	}
-	
+
 	/**
 	 * Make a new entry
 	 */
@@ -89,16 +89,16 @@ class Transaction
 		if ($transaction != null) {
 			return $transaction;
 		}
-		
+
 		$category = Category::findWithTransactionDescription($description);
-		
+
 		$q = 	"INSERT INTO trans VALUES (" .
 				"null," .
 				"'" . $date . "'," .
 				"'" . $description . "'," .
 				$amount . "," .
 				$category->getId() . "," .
-				self::StatusNormal . "," . 
+				self::StatusNormal . "," .
 				"null" .
 				")";
 		$result = runQuery($q);
@@ -113,11 +113,11 @@ class Transaction
 		return self::makeWithDetails(	$date,
 										$description,
 										$amount);
-	
 
 
 
-		
+
+
 		return new self($id,		// ?
 						$date,
 						$description,
@@ -126,7 +126,7 @@ class Transaction
 						self::StatusNormal,
 						null);
 	}
-	
+
 	public function getDate()
 	{
 		return $this->date;
@@ -141,7 +141,7 @@ class Transaction
 	{
 		return $this->amount;
 	}
-	
+
 	public function getCategory()
 	{
 		if ($this->category === false) {
@@ -149,22 +149,22 @@ class Transaction
 		}
 		return $this->category;
 	}
-	
+
 	public function getStatus()
 	{
 		return $this->status;
 	}
-	
+
 	public function getComment()
 	{
 		return $this->comment;
 	}
-	
+
 	public function toString()
 	{
 		return $this->date . ' ' . $this->description . ' ' . $this->amount. ' ' . $this->status . ' ' . $this->comment;
 	}
-		
+
 	public function setCategory(Category $newCategory)
 	{
 		$q = 	"UPDATE trans SET category=" .
@@ -239,11 +239,12 @@ class Transaction
 					'r');
 		if ($fd === null) {
 			throw new Exception('File: ' .
-								$fileName . 
+								$fileName .
 								' cannot be opened for reading.');
 		}
-		
-		for ($i = 0; $i < 7; ++$i) {
+
+		// skip the 1st 8 lines
+		for ($i = 0; $i < 8; ++$i) {
 			fgets($fd);
 		}
 		while (!feof($fd)) {
@@ -253,14 +254,15 @@ class Transaction
 			}
 			$parts = explode(	',',
 								$line);
-			$transactionDetail['date'] 			= trim(str_replace("/", "-", $parts[0]));
-			$transactionDetail['description']	= trim(str_replace("'", "", $parts[3]));
-			$transactionDetail['amount'] 		= trim($parts[1]);
+			$date = $parts[0];
+			$transactionDetail['date'] 			= substr($date, 0, 4) . '-' . substr($date, 4, 2) . '-' . substr($date, 6, 2);
+			$transactionDetail['description']	= trim(str_replace("'", "", $parts[2]));
+			$transactionDetail['amount'] 		= trim($parts[5]);
 			$transactionDetails[] 				= $transactionDetail;
 			unset($transactionDetail);
 		}
 	}
-	
+
 	/**
 	 * Command: Import
 	 */
@@ -287,7 +289,7 @@ class Transaction
 		return array(	'ignored' => $ignored,
 						'added' => $added);
 	}
-	
+
 	static public function getTransactions(	&$transactions,
 											$startDate,
 											$stopDate)
@@ -318,7 +320,7 @@ class Transaction
 												$row['comment']);
 		}
 	}
-	
+
 	static public function reCategorise()
 	{
 		$q = "SELECT * FROM trans WHERE category = 0";

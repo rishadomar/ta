@@ -243,8 +243,8 @@ class Transaction
 								' cannot be opened for reading.');
 		}
 
-		// skip the 1st 8 lines
-		for ($i = 0; $i < 8; ++$i) {
+		// skip the first few lines
+		for ($i = 0; $i < 7; ++$i) {
 			fgets($fd);
 		}
 		while (!feof($fd)) {
@@ -255,9 +255,9 @@ class Transaction
 			$parts = explode(	',',
 								$line);
 			$date = $parts[0];
-			$transactionDetail['date'] 			= substr($date, 0, 4) . '-' . substr($date, 4, 2) . '-' . substr($date, 6, 2);
-			$transactionDetail['description']	= trim(str_replace("'", "", $parts[2]));
-			$transactionDetail['amount'] 		= trim($parts[5]);
+			$transactionDetail['date'] 			= substr($date, 0, 4) . '-' . substr($date, 5, 2) . '-' . substr($date, 8, 2);
+			$transactionDetail['amount'] 		= trim($parts[1]);
+			$transactionDetail['description']	= trim(str_replace("'", "", $parts[3]));
 			$transactionDetails[] 				= $transactionDetail;
 			unset($transactionDetail);
 		}

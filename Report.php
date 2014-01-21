@@ -2,10 +2,10 @@
 
 class Report
 {
-	const ReportDatesFileName = '/home/rishadomar/src/ta/reportDates.list';
+	const ReportDatesFileName = './reportDates.list';
 	private $startDate;
 	private $stopDate;
-	
+
 	static public function makeWithMonth($month)
 	{
 		if (strlen($month) == 3) {
@@ -14,12 +14,12 @@ class Report
 		}
 		$fd = fopen(self::ReportDatesFileName,
 					'r');
-		if ($fd === null) {
+		if ($fd == null) {
 			throw new Exception('File: ' .
-								self::ReportDatesFileName . 
+								self::ReportDatesFileName .
 								' cannot be opened for reading.');
 		}
-		
+
 		$startDate = false;
 		$stopDate = false;
 		while (	!feof($fd)
@@ -44,7 +44,7 @@ class Report
 		}
 		fclose($fd);
 
-		if ($startDate 
+		if ($startDate
 			&&
 			$stopDate) {
 			$parts = explode('-', $stopDate);
@@ -53,7 +53,7 @@ class Report
 		}
 
 		if ($startDate) {
-			throw new Exception('Start date ' . 
+			throw new Exception('Start date ' .
 								$startDate .
 								' found, but no stop date found.');
 		}
@@ -67,7 +67,7 @@ class Report
 		$this->startDate = $startDate;
 		$this->stopDate = $stopDate;
 	}
-	
+
 	/**
 	 * Command: Report
 	 */
@@ -82,12 +82,12 @@ class Report
 			$report[$category->getName()] = array();
 		}
 		$report['Ignored'] = array();
-			
+
 		$transactions = array();
 		Transaction::getTransactions(	$transactions,
 										$this->startDate,
 										$this->stopDate);
-			
+
 		foreach ($transactions as &$transaction) {
 			if ($transaction->getStatus() == Transaction::StatusIgnore) {
 				$report['Ignored'][] = $transaction;
@@ -95,7 +95,7 @@ class Report
 				$report[$transaction->getCategory()->getName()][] = $transaction;
 			}
 		}
-			
+
 		$total = 0;
 		foreach ($report as $categoryName => $transactions) {
 			if (count($transactions) == 0) {

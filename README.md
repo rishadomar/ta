@@ -42,6 +42,10 @@ For FNB this is the route on their website:
 
 Then extract the csv file into a folder
 
-8) ./ta report jan2014 >reports/jan2014.txt
+8) Import your csv file. Duplicates are ignored
+./ta import downloads/2014-01-23.csv
+
+9) Generate a report
+./ta report jan2014 >reports/jan2014.txt
 vim reports/jan2014.txt
 

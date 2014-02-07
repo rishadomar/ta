@@ -14,7 +14,7 @@ class Category
 		$this->name = $name;
 		$this->transactionDescriptions = array();
 	}
-	
+
 	static public function makeWithId($id)
 	{
 		if (self::$categories === false) {
@@ -60,7 +60,7 @@ class Category
 	{
 		return $this->name;
 	}
-	
+
 	static public function findWithTransactionDescription($description)
 	{
 		self::readAll();
@@ -80,15 +80,15 @@ class Category
 		if (self::$categories !== false) {
 			return self::$categories;
 		}
-		
+
 		$fd = fopen(self::CategoryFileName,
 					'r');
-		if ($fd === null) {
+		if ($fd == null) {
 			throw new Exception('File: ' .
-								self::CategoryFileName . 
+								self::CategoryFileName .
 								' cannot be opened for reading.');
 		}
-		
+
 		self::$categories = array();
 		while (!feof($fd)) {
 			$line = fgets($fd);

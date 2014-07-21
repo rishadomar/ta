@@ -110,13 +110,14 @@ class Report
 						$transaction->getAmount());
 				$categoryTotal += $transaction->getAmount();
 			}
-			printf("\tTotal: " . $categoryTotal .  "\n\n\n");
+			printf("\tTotal: %.2f", $categoryTotal);
+			printf("\n\n\n");
 			if ($categoryName == 'Ignored') {
 				continue;
 			}
 			$total += $categoryTotal;
 		}
-		printf("Total: " . $total .  "\n");
+		printf("Total: %.2f\n", $total);
 	}
 }
 

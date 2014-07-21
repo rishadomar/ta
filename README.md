@@ -5,6 +5,10 @@ Currently only works for FNB csv files
 
 Installation:
 -------------
+0) PHP setup
+sudo apt-get install sqlite3 libsqlite3-dev
+sudo apt-get install php5-sqlite
+
 1) cd ~/somewhere
 
 2) git clone git@github.com:rishadomar/ta.git
